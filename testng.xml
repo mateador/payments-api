@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="PaymentsAPI Test Suite" verbose="1">
+
+    <test name="Context Tests">
+        <classes>
+            <class name="com.example.paymentsapi.PaymentsApiApplicationTests"/>
+        </classes>
+    </test>
+
+    <test name="Controller Tests">
+        <classes>
+            <class name="com.example.paymentsapi.controller.PaymentControllerTest"/>
+        </classes>
+    </test>
+
+    <test name="Repository Integration Tests">
+        <classes>
+            <class name="com.example.paymentsapi.repository.PaymentRepositoryTest"/>
+        </classes>
+    </test>
+
+</suite>
