@@ -22,7 +22,11 @@ public class PaymentRepositoryTest extends AbstractTestNGSpringContextTests {
 
         // Arrange
         PaymentRequest request = new PaymentRequest();
+        request.setAccountId("1234567890");
+        request.setAmount(new java.math.BigDecimal("100.00"));
+        request.setCurrency("USD");
         request.setMerchantId("Alexandre");
+        request.setIdempotencyKey("1234567890");
 
         // Act
         PaymentResponse response = paymentRepository.callGetDate(request);

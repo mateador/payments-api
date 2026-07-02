@@ -37,12 +37,16 @@ public class PaymentControllerTest extends AbstractTestNGSpringContextTests {
         Mockito.reset(paymentService);
     }
 
-    @Test(description = "Should return date when a valid name is provided")
+    @Test(description = "Should return date when a valid payload is provided")
     public void shouldReturnDateWhenNameIsProvided() throws Exception {
 
         // Arrange
         PaymentRequest request = new PaymentRequest();
+        request.setAccountId("1234567890");
+        request.setAmount(new java.math.BigDecimal("100.00"));
+        request.setCurrency("USD");
         request.setMerchantId("Alexandre");
+        request.setIdempotencyKey("1234567890");
 
         PaymentResponse response = PaymentResponse.builder()
                 .merchantId("Alexandre")
@@ -57,8 +61,8 @@ public class PaymentControllerTest extends AbstractTestNGSpringContextTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Alexandre"))
-                .andExpect(jsonPath("$.date").value("2024-06-21"));
+                .andExpect(jsonPath("$.merchantId").value("Alexandre"))
+                .andExpect(jsonPath("$.message").value("2024-06-21"));
     }
 
     @Test(description = "Should return 400 when name is blank")
@@ -66,7 +70,11 @@ public class PaymentControllerTest extends AbstractTestNGSpringContextTests {
 
         // Arrange
         PaymentRequest request = new PaymentRequest();
+        request.setAccountId("1234567890");
+        request.setAmount(new java.math.BigDecimal("100.00"));
+        request.setCurrency("USD");
         request.setMerchantId("");
+        request.setIdempotencyKey("1234567890");
 
         // Act + Assert
         mockMvc.perform(post("/api/payment/get-date")
