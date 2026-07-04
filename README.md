@@ -91,3 +91,14 @@ SELECT CURRENT_TIMESTAMP FROM dual;
 - Adding all deleted and modified files to stage: commit add -u
 - Committing the changes: commit -m "<message>"
 - Pushing the changes to the remote repository: push origin 
+
+### How to execute the SQL script
+- src/main/java/com/example/paymentsapi/model/payment_api_database.sql
+-  @/tmp/payment_api_database.sql
+- @/src/main/java/com/example/paymentsapi/model/payment_api_database.sql
+- 
+- sqlplus system/YourPassword123@//localhost:1521/FREE
+- @<path_to_file>
+
+
+docker cp /src/main/java/com/example/paymentsapi/model/payment_api_database.sql oracle-local:/tmp/payment_api_database.sql
