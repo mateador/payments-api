@@ -11,7 +11,7 @@ There will be an API and a connection to a Oracle database.
 ### How to run the project
 - Exec the oracle machine 
 
-### Request by curl
+### Request by curl - valid request
 ```
 curl -X POST http://localhost:8080/api/payment/get-date \
 -H "Content-Type: application/json" \
@@ -22,6 +22,25 @@ curl -X POST http://localhost:8080/api/payment/get-date \
     "merchantId": "MERCH-42",
     "idempotencyKey": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 }'
+```
+#### Invalid request
+```
+curl -X POST http://localhost:8080/api/payment/get-date \
+-H "Content-Type: application/json" \
+-d '{
+    "accountId": "ACC-001",
+    "amount": 150.00,
+    "currency": "GBP",
+    "merchantId": "MERCH-999",
+    "idempotencyKey": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+}'
+```
+
+#### Invalid request
+```
+curl -X POST http://localhost:8080/api/payment/get-date \
+-H "Content-Type: application/json" \
+-d ''
 ```
 
 ### Example of a valid request
@@ -92,13 +111,14 @@ SELECT CURRENT_TIMESTAMP FROM dual;
 - Committing the changes: commit -m "<message>"
 - Pushing the changes to the remote repository: push origin 
 
-### How to execute the SQL script
-- src/main/java/com/example/paymentsapi/model/payment_api_database.sql
--  @/tmp/payment_api_database.sql
-- @/src/main/java/com/example/paymentsapi/model/payment_api_database.sql
-- 
-- sqlplus system/YourPassword123@//localhost:1521/FREE
-- @<path_to_file>
-
-
+### How to execute the SQL script from the docker container
+- Considering the file:
+  - src/main/java/com/example/paymentsapi/model/payment_api_database.sql
+- Copy the file to the docker container 'oracle-local:
+```
 docker cp /src/main/java/com/example/paymentsapi/model/payment_api_database.sql oracle-local:/tmp/payment_api_database.sql
+```
+- Run the file from the command SQL:
+```
+@/path/to/payment_api_database.sql
+```
