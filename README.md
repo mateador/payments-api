@@ -116,9 +116,9 @@ SELECT CURRENT_TIMESTAMP FROM dual;
   - src/main/java/com/example/paymentsapi/model/payment_api_database.sql
 - Copy the file to the docker container 'oracle-local:
 ```
-docker cp /src/main/java/com/example/paymentsapi/model/payment_api_database.sql oracle-local:/tmp/payment_api_database.sql
+docker cp /src/SQL/process_payment.sql oracle-local:/tmp/process_payment.sql
 ```
 - Run the file from the command SQL:
 ```
-@/path/to/payment_api_database.sql
+@/tmp/process_payment.sql
 ```

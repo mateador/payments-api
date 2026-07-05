@@ -5,7 +5,10 @@ import com.example.paymentsapi.model.PaymentRequest;
 import com.example.paymentsapi.model.PaymentResponse;
 import com.example.paymentsapi.repository.MerchantRepository;
 import com.example.paymentsapi.repository.PaymentRepository;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class PaymentService {
@@ -18,14 +21,16 @@ public class PaymentService {
         this.merchantRepository = merchantRepository;
     }
 
-    public PaymentResponse processRequest(PaymentRequest request) {
+    @Async("paymentExecutor")
+    public CompletableFuture<PaymentResponse> processRequest(PaymentRequest request) {
 
         // Validate merchant exists and is ACTIVE before touching payment flow
         if (!merchantRepository.existsAndActive(request.getMerchantId())) {
             throw new MerchantNotFoundException(request.getMerchantId());
         }
 
-        return paymentRepository.callGetDate(request);
+        PaymentResponse response = paymentRepository.callProcessPayment(request);
+        return CompletableFuture.completedFuture(response);
     }
 
 }

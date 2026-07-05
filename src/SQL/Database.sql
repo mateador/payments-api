@@ -15,7 +15,7 @@ BEGIN
     get_date('', date_out);
     dbms_output.put_line(date_out);
 END;
-
+/
 
 
 

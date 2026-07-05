@@ -29,7 +29,7 @@ public class PaymentRepositoryTest extends AbstractTestNGSpringContextTests {
         request.setIdempotencyKey("1234567890");
 
         // Act
-        PaymentResponse response = paymentRepository.callGetDate(request);
+        PaymentResponse response = paymentRepository.callProcessPayment(request);
 
         // Assert
         assertThat(response).isNotNull();

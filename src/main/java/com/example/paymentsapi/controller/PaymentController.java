@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.concurrent.CompletableFuture;
+
 @RestController
 @RequestMapping("/api/payment")
 public class PaymentController {
@@ -21,11 +23,11 @@ public class PaymentController {
     }
 
     @PostMapping("/get-date")
-    public ResponseEntity<PaymentResponse> getDate(
+    public CompletableFuture<ResponseEntity<PaymentResponse>> getDate(
             @Valid @RequestBody PaymentRequest request) {
 
-        PaymentResponse response = paymentService.processRequest(request);
-        return ResponseEntity.ok(response);
+        return paymentService.processRequest(request)
+                .thenApply(ResponseEntity::ok);
     }
 
 }

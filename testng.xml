@@ -20,4 +20,10 @@
         </classes>
     </test>
 
+    <test name="Concurrency Tests" preserve-order="false">
+        <classes>
+            <class name="com.example.paymentsapi.PaymentConcurrencyTest"/>
+        </classes>
+    </test>
+
 </suite>

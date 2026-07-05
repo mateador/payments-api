@@ -53,8 +53,8 @@ public class PaymentControllerTest extends AbstractTestNGSpringContextTests {
                 .message("2024-06-21")
                 .build();
 
-        Mockito.when(paymentService.processRequest(any(PaymentRequest.class)))
-                .thenReturn(response);
+        //Mockito.when(paymentService.processRequest(any(PaymentRequest.class)))
+        //       .thenReturn(response);
 
         // Act + Assert
         mockMvc.perform(post("/api/payment/get-date")
