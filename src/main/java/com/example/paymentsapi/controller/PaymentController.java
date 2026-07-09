@@ -23,11 +23,10 @@ public class PaymentController {
     }
 
     @PostMapping("/get-date")
-    public CompletableFuture<ResponseEntity<PaymentResponse>> getDate(
+    public CompletableFuture<PaymentResponse> getDate(
             @Valid @RequestBody PaymentRequest request) {
 
-        return paymentService.processRequest(request)
-                .thenApply(ResponseEntity::ok);
+        return paymentService.processRequest(request);
     }
 
 }

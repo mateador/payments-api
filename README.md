@@ -8,8 +8,20 @@ There will be an API and a connection to a Oracle database.
 2. Adding test classes to test the application, with TestNG.
 
 
-### How to run the project
-- Exec the oracle machine 
+### How to run the project 
+Run it from the repo root, where pom.xml lives:
+#### 1. Start the Oracle container first
+```
+docker start oracle-local
+```
+or create it once if you have not done that yet:
+```
+docker run -d --name oracle-local -p 1521:1521 -e ORACLE_PWD=YourPassword123 container-registry.oracle.com/database/free:latest
+```
+#### 2. Start the Spring Boot app
+```
+mvn spring-boot:run
+```
 
 ### Request by curl - valid request
 ```

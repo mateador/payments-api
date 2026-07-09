@@ -17,8 +17,8 @@ public class PaymentRepositoryTest extends AbstractTestNGSpringContextTests {
     @Autowired
     private PaymentRepository paymentRepository;
 
-    @Test(description = "Should return a valid date from the stored procedure")
-    public void shouldReturnDateFromStoredProcedure() {
+    @Test(description = "Should return approved from the stored procedure")
+    public void shouldReturnAProvedFromStoredProcedure() {
 
         // Arrange
         PaymentRequest request = new PaymentRequest();
@@ -34,9 +34,9 @@ public class PaymentRepositoryTest extends AbstractTestNGSpringContextTests {
         // Assert
         assertThat(response).isNotNull();
         assertThat(response.getMerchantId()).isEqualTo("Alexandre");
-        assertThat(response.getMessage())
+        assertThat(response.getStatus())
                 .isNotBlank()
-                .matches("\\d{4}-\\d{2}-\\d{2}");
+                .isEqualTo("APPROVED");
     }
 
 }

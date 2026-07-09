@@ -69,17 +69,18 @@ public class PaymentConcurrencyTest extends AbstractTestNGSpringContextTests {
             String accountId  = String.format("ACC-%03d",  (i % 10) + 1);
 
             PaymentRequest request = buildRequest(accountId, merchantId);
-            futures.add(paymentService.processRequest(request));
+            CompletableFuture<PaymentResponse> paymentFuture = paymentService.processRequest(request);
+            futures.add(paymentFuture);
         }
 
         // Wait for all futures to complete
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-        // Assert every one succeeded
+        // Assert everyone succeeded
         for (CompletableFuture<PaymentResponse> future : futures) {
             PaymentResponse response = future.get();
             assertThat(response).isNotNull();
-            assertThat(response.getDate()).matches("\\d{4}-\\d{2}-\\d{2}");
+            assertThat(response.getStatus()).isEqualTo("APPROVED");
             successCount.incrementAndGet();
         }
 
@@ -136,8 +137,7 @@ public class PaymentConcurrencyTest extends AbstractTestNGSpringContextTests {
     // ----------------------------------------------------------------
     @Test(description      = "One request per merchant — all 10 in parallel",
             dataProvider     = "merchantProvider",
-            threadPoolSize   = 10,
-            invocationCount  = 1)
+            threadPoolSize   = 10)
     public void shouldProcessEachMerchantConcurrently(
             String merchantId, String accountId)
             throws ExecutionException, InterruptedException {
@@ -147,7 +147,7 @@ public class PaymentConcurrencyTest extends AbstractTestNGSpringContextTests {
         PaymentResponse response = paymentService.processRequest(request).get();
 
         assertThat(response).isNotNull();
-        assertThat(response.getDate()).isNotBlank();
+        assertThat(response.getStatus()).isNotBlank();
         successCount.incrementAndGet();
     }
 
@@ -166,8 +166,12 @@ public class PaymentConcurrencyTest extends AbstractTestNGSpringContextTests {
     // ----------------------------------------------------------------
     private PaymentRequest buildRequest(String accountId, String merchantId) {
         PaymentRequest request = new PaymentRequest();
-        request.setName("LoadTest-" + Thread.currentThread().getName());
+        request.setAccountId(accountId);
+        request.setAmount(new java.math.BigDecimal("100.00"));
+        request.setCurrency("USD");
         request.setMerchantId(merchantId);
+        request.setIdempotencyKey("LoadTest-" + Thread.currentThread().getName());
+
         // Unique idempotency key per request — avoids DB constraint collision
         request.setIdempotencyKey(UUID.randomUUID().toString());
         return request;

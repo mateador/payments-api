@@ -5,6 +5,7 @@ import com.example.paymentsapi.model.PaymentResponse;
 import com.example.paymentsapi.service.PaymentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.Matchers;
+import static org.assertj.core.api.Assertions.assertThat;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -37,8 +38,8 @@ public class PaymentControllerTest extends AbstractTestNGSpringContextTests {
         Mockito.reset(paymentService);
     }
 
-    @Test(description = "Should return date when a valid payload is provided")
-    public void shouldReturnDateWhenNameIsProvided() throws Exception {
+    @Test(description = "Should return approved when a valid payload is provided")
+    public void shouldReturnApprovedWhenValidPayloadIsProvided() throws Exception {
 
         // Arrange
         PaymentRequest request = new PaymentRequest();
@@ -48,21 +49,27 @@ public class PaymentControllerTest extends AbstractTestNGSpringContextTests {
         request.setMerchantId("Alexandre");
         request.setIdempotencyKey("1234567890");
 
+        /*
         PaymentResponse response = PaymentResponse.builder()
                 .merchantId("Alexandre")
                 .message("2024-06-21")
                 .build();
 
-        //Mockito.when(paymentService.processRequest(any(PaymentRequest.class)))
-        //       .thenReturn(response);
+        Mockito.when(paymentService.processRequest(any(PaymentRequest.class)))
+               .thenReturn(CompletableFuture.completedFuture(response));
+        */
 
         // Act + Assert
-        mockMvc.perform(post("/api/payment/get-date")
+        String responseBody = mockMvc.perform(post("/api/payment/get-date")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.merchantId").value("Alexandre"))
-                .andExpect(jsonPath("$.message").value("2024-06-21"));
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        PaymentResponse response = objectMapper.readValue(responseBody, PaymentResponse.class);
+        assertThat(response.getStatus()).isEqualTo("APPROVED");
     }
 
     @Test(description = "Should return 400 when name is blank")
