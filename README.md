@@ -73,17 +73,17 @@ Try them:
 
 ```bash
 # Valid
-curl -X POST http://localhost:8080/api/payments \
+curl -X POST http://localhost:8080/api/payment/postPayment \
   -H "Content-Type: application/json" \
   -d '{"accountId":"ACC-001","amount":150.00,"currency":"GBP","merchantId":"MERCH-42","idempotencyKey":"a1b2c3d4-e5f6-7890-abcd-ef1234567890"}'
 
 # Unrecognised merchant
-curl -X POST http://localhost:8080/api/payments \
+curl -X POST http://localhost:8080/api/payment/postPayment \
   -H "Content-Type: application/json" \
   -d '{"accountId":"ACC-001","amount":150.00,"currency":"GBP","merchantId":"MERCH-999","idempotencyKey":"a1b2c3d4-e5f6-7890-abcd-ef1234567890"}'
 
 # Malformed
-curl -X POST http://localhost:8080/api/payments \
+curl -X POST http://localhost:8080/api/payment/postPayment \
   -H "Content-Type: application/json" -d ''
 ```
 

@@ -22,8 +22,8 @@ public class PaymentController {
         this.paymentService = paymentService;
     }
 
-    @PostMapping("/get-date")
-    public CompletableFuture<PaymentResponse> getDate(
+    @PostMapping("/postPayment")
+    public CompletableFuture<PaymentResponse> postPayment(
             @Valid @RequestBody PaymentRequest request) {
 
         return paymentService.processRequest(request);
