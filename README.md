@@ -1,73 +1,54 @@
+# Payments API
 
-## Payments-API
-Payments-API to practice the a Java application with API, connecting to a local machine with Oracle - using stored procedures
-There will be an API and a connection to a Oracle database.
+A Spring Boot REST service that accepts payment authorisation requests, validates them, and
+processes them through an Oracle stored procedure.
 
-### First version
-1. Build an application to request the current time from an Oracle database.
-2. Adding test classes to test the application, with TestNG.
+**Stack:** Java 17 · Spring Boot 3 · Oracle Database Free (Docker) · Maven · TestNG
 
+---
 
-### How to run the project 
-Run it from the repo root, where pom.xml lives:
-#### 1. Start the Oracle container first
-```
-docker start oracle-local
-```
-or create it once if you have not done that yet:
-```
-docker run -d --name oracle-local -p 1521:1521 -e ORACLE_PWD=YourPassword123 container-registry.oracle.com/database/free:latest
-```
-#### 2. Start the Spring Boot app
-```
-mvn spring-boot:run
-```
+## Why it's built this way
 
-### Request by curl - valid request
-```
-curl -X POST http://localhost:8080/api/payment/get-date \
--H "Content-Type: application/json" \
--d '{
-    "accountId": "ACC-001",
-    "amount": 150.00,
-    "currency": "GBP",
-    "merchantId": "MERCH-42",
-    "idempotencyKey": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-}'
-```
-#### Invalid request
-```
-curl -X POST http://localhost:8080/api/payment/get-date \
--H "Content-Type: application/json" \
--d '{
-    "accountId": "ACC-001",
-    "amount": 150.00,
-    "currency": "GBP",
-    "merchantId": "MERCH-999",
-    "idempotencyKey": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-}'
-```
+The interesting part of a payments service isn't the happy path — it's the request contract, the
+failure modes, and where the transactional logic lives. Three decisions shape this codebase:
 
-#### Invalid request
-```
-curl -X POST http://localhost:8080/api/payment/get-date \
--H "Content-Type: application/json" \
--d ''
-```
+**Transaction logic sits in a stored procedure, not in Java.** `process_payment.sql` owns the
+authorisation decision. This mirrors how payment processing typically works in an established
+enterprise estate, where the database holds decades of accumulated business rules and the service
+layer is a controlled entry point to them rather than a replacement for them. It also keeps the
+authorisation atomic at the database level.
 
-### Example of a valid request
-```
+**Idempotency is part of the request contract, not an afterthought.** Every request carries an
+`idempotencyKey`. Payment clients retry — on timeout, on network failure, on user impatience — and a
+retry must never produce a second charge. Designing the key into the contract from the first version
+is much cheaper than retrofitting it once callers exist.
+
+**Rejections are responses, not exceptions to the caller.** An unknown merchant is a normal business
+outcome, not a system fault, and the API distinguishes that from a malformed request. A caller should
+be able to tell "your request was wrong", "your request was fine but declined", and "we broke" apart
+from each other without parsing a stack trace.
+
+---
+
+## The API
+
+### `POST /api/payments`
+
+**Request**
+
+```json
 {
-    "accountId": "ACC-001",
-    "amount": 150.00,
-    "currency": "GBP",
-    "merchantId": "MERCH-42",
-    "idempotencyKey": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  "accountId": "ACC-001",
+  "amount": 150.00,
+  "currency": "GBP",
+  "merchantId": "MERCH-42",
+  "idempotencyKey": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 }
 ```
 
-### Example of a valid response
-```
+**Response**
+
+```json
 {
   "transactionId": "TXN-20240621-001",
   "status": "APPROVED",
@@ -80,57 +61,104 @@ curl -X POST http://localhost:8080/api/payment/get-date \
 }
 ```
 
-### How to update the project on GitHub
-- Push the changes to the GitHub repository
+### Handled cases
 
-### Requirements for testsing
-- Selenium WebDriver - Maven Repository: org.seleniumhq.selenium » selenium-java (mvnrepository.com)
-- TestNG - Maven Repository: org.testng » testng (mvnrepository.com)
+| Scenario | Example | Behaviour |
+|---|---|---|
+| Valid request | `MERCH-42` | Processed through the stored procedure, `APPROVED` returned |
+| Unrecognised merchant | `MERCH-999` | Declined with a structured error response |
+| Empty or malformed body | `-d ''` | Rejected at validation before reaching the database |
 
-### Installing Oracle locally on Linux
-The easiest path by far is Docker, using Oracle Database Free (the free tier Oracle officially publishes):
+Try them:
 
-#### 1. Pull the official Oracle Free image
+```bash
+# Valid
+curl -X POST http://localhost:8080/api/payments \
+  -H "Content-Type: application/json" \
+  -d '{"accountId":"ACC-001","amount":150.00,"currency":"GBP","merchantId":"MERCH-42","idempotencyKey":"a1b2c3d4-e5f6-7890-abcd-ef1234567890"}'
+
+# Unrecognised merchant
+curl -X POST http://localhost:8080/api/payments \
+  -H "Content-Type: application/json" \
+  -d '{"accountId":"ACC-001","amount":150.00,"currency":"GBP","merchantId":"MERCH-999","idempotencyKey":"a1b2c3d4-e5f6-7890-abcd-ef1234567890"}'
+
+# Malformed
+curl -X POST http://localhost:8080/api/payments \
+  -H "Content-Type: application/json" -d ''
 ```
-docker pull container-registry.oracle.com/database/free:latest
+
+---
+
+## Running it locally
+
+Everything runs from the repository root, where `pom.xml` lives.
+
+**1. Start Oracle.** The database runs in Docker so the environment is reproducible and disposable —
+no local Oracle install, no shared dev database to corrupt.
+
+```bash
+docker run -d --name oracle-local -p 1521:1521 \
+  -e ORACLE_PWD=YourPassword123 \
+  container-registry.oracle.com/database/free:latest
 ```
-#### 2. Run it (first run takes 3–5 minutes to initialise)
-```
-docker run -d \
---name oracle-local \
--p 1521:1521 \
--e ORACLE_PWD=YourPassword123 \
-container-registry.oracle.com/database/free:latest
-```
-#### 3. Check it's ready (look for "DATABASE IS READY TO USE!")
-```
+
+First run takes 3–5 minutes to initialise. Watch for `DATABASE IS READY TO USE!`:
+
+```bash
 docker logs -f oracle-local
 ```
-#### 4. Connect with SQL*Plus inside the container
-```
-docker start oracle-local
+
+On subsequent runs, `docker start oracle-local` is enough.
+
+**2. Load the stored procedure.**
+
+```bash
+docker cp src/SQL/process_payment.sql oracle-local:/tmp/process_payment.sql
 docker exec -it oracle-local sqlplus system/YourPassword123@//localhost:1521/FREE
 ```
-#### 5. Just to check if it's working
-```
-SELECT CURRENT_TIMESTAMP FROM dual; 
+
+Then, at the SQL prompt: `@/tmp/process_payment.sql`
+
+**3. Start the service.**
+
+```bash
+mvn spring-boot:run
 ```
 
-### How to commit the changes
-- git status (in the correct directory)
-- Adding new files to the stage: commit add <file>
-- Adding all deleted and modified files to stage: commit add -u
-- Committing the changes: commit -m "<message>"
-- Pushing the changes to the remote repository: push origin 
+---
 
-### How to execute the SQL script from the docker container
-- Considering the file:
-  - src/main/java/com/example/paymentsapi/model/payment_api_database.sql
-- Copy the file to the docker container 'oracle-local:
+## Testing
+
+```bash
+mvn test
 ```
-docker cp /src/SQL/process_payment.sql oracle-local:/tmp/process_payment.sql
+
+The TestNG suite is defined in `testng.xml` and covers the request validation and processing paths
+described above.
+
+---
+
+## Current scope and what's next
+
+This is a deliberately narrow slice — one endpoint, exercised end to end through a real database
+rather than a mocked one, because the integration boundary is where this kind of service actually
+breaks.
+
+Planned next:
+
+- [ ] GitHub Actions workflow running the build and test suite on every push
+- [ ] Persisted idempotency store so repeat keys return the original response rather than reprocessing
+- [ ] Structured request/response logging with correlation IDs
+- [ ] OpenAPI specification generated from the controller
+
+---
+
+## Repository layout
+
 ```
-- Run the file from the command SQL:
-```
-@/tmp/process_payment.sql
+src/
+  main/java/com/example/paymentsapi/   — application code
+  SQL/process_payment.sql              — authorisation stored procedure
+pom.xml                                — Maven build
+testng.xml                             — test suite definition
 ```
